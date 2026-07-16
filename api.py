@@ -72,6 +72,12 @@ def decode(r: DecodeReq):
     return JSONResponse(status_code=status, content={"ok": res.get("valid", False), **res})
 
 
+@app.post("/alternatives")
+def alternatives(r: DecodeReq):
+    """'That doesn't look right' — nearby valid addresses one confusable word away."""
+    return {"ok": True, "alternatives": A.alternatives(r.address)}
+
+
 @app.get("/geocode")
 def geocode(q: str):
     """Street address / place name -> coordinates."""

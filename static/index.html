@@ -37,6 +37,13 @@
   .status.ok{color:var(--accent2)}
   .hint{font-size:11px;color:var(--muted);margin-top:4px}
   .badge{display:inline-block;font-size:11px;padding:1px 7px;border-radius:20px;background:var(--chip);color:var(--muted)}
+  .altBtn{margin-top:10px;width:100%;padding:9px;border:1px solid var(--line);border-radius:8px;
+      background:var(--chip);color:var(--ink);font:inherit;font-size:13px;cursor:pointer}
+  .altBtn:hover{border-color:var(--accent)}
+  .altItem{border:1px solid var(--line);border-radius:8px;padding:8px 10px;margin-top:8px;cursor:pointer;font-size:12px}
+  .altItem:hover{border-color:var(--accent);background:var(--chip)}
+  .altItem .aw{font-family:ui-monospace,Menlo,monospace;font-size:12px;word-break:break-all}
+  .altItem .am{color:var(--muted);margin-top:2px}
   /* autocomplete */
   .ac-wrap{position:relative;min-width:0}
   .ac{position:absolute;top:100%;left:0;right:0;z-index:1000;background:#fff;border:1px solid var(--line);
@@ -79,7 +86,7 @@
     <!-- WORD ADDRESS -->
     <div class="card">
       <h2>Word address</h2>
-      <input id="wordsIn" class="mono" placeholder="installing-herd-chimera-washable-pendent-W">
+      <input id="wordsIn" class="mono" placeholder="trot-viper-ripe-expiate-bafegab-C">
       <label>Precision (words)</label>
       <select id="wordCount">
         <option value="3">3 — ~460 m (block)</option>
@@ -90,6 +97,8 @@
       </select>
       <div class="hint">up to 7 words + checksum letter · typos auto-correct</div>
       <div class="status" id="woStatus"></div>
+      <button class="altBtn" id="altBtn" style="display:none" onclick="showAlternatives()">That doesn't look right?</button>
+      <div id="altList"></div>
     </div>
 
     <!-- GPS -->
@@ -123,7 +132,9 @@ const map = L.map('map', {
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
   {maxZoom:19, minZoom:2, noWrap:true, attribution:'© OpenStreetMap'}).addTo(map);
 let marker = L.marker([51.5074, -0.1278]).addTo(map);
+let previewMarker = null;
 let cellLayer = null;
+let previewAlt = null;
 
 const $=id=>document.getElementById(id);
 const FACT={m:1, km:1000, ft:0.3048, mi:1609.344};
@@ -194,6 +205,120 @@ async function fromWords(){
     ?'corrected: '+JSON.stringify(d.corrections):'converted',true);
   $('wordsIn').value=d.words.join('-')+'-'+a.split('-').pop().toUpperCase();
   await fillAll(d.lat,d.lon,d.alt_km,{wordsAlready:true,edge:d.cell_edge_m,statusId:'woStatus'});
+  $('altBtn').style.display='block';   // decoded fine, but user may still doubt it
+}
+
+// --- "that doesn't look right" -> ask how far off, then diagnose the bad word ---
+let altMarkers=[];
+function clearAlts(){
+  $('altList').innerHTML='';
+  altMarkers.forEach(m=>map.removeLayer(m));
+  altMarkers=[];
+  previewAlt=null;
+  if(previewMarker){
+      map.removeLayer(previewMarker);
+      previewMarker = null;
+  }
+}
+
+async function showAlternatives(){
+  clearAlts();
+  // step 1: ask how far off the shown location looks
+  $('altList').innerHTML=`
+    <div class="hint" style="margin-top:10px">How far off does the shown location look?</div>
+    <div class="altItem" onclick="altBand('close')"><b>Close</b><div class="am">right area, wrong spot — a late word is off</div></div>
+    <div class="altItem" onclick="altBand('far')"><b>Far</b><div class="am">wrong town or city — a middle word is off</div></div>
+    <div class="altItem" onclick="altBand('veryfar')"><b>Very far</b><div class="am">wrong region or country — an early word is off</div></div>`;
+}
+
+async function altBand(band){
+  $('altList').innerHTML='<div class="hint" style="margin-top:8px">searching…</div>';
+  const a=$('wordsIn').value.trim();
+  const res=await post('/alternatives',{address:a});
+  let alts=res.alternatives||[];
+  // distance from the shown decode diagnoses which word was mistyped
+  const inBand = d => band==='close' ? d<10 : band==='far' ? (d>=10&&d<1000) : d>=1000;
+  alts=alts.filter(x=>inBand(x.distance_km));
+  if(!alts.length){
+    $('altList').innerHTML='<div class="hint" style="margin-top:8px">no checksum-valid alternatives in that range — try another distance, or re-check the address with its sender</div>'+
+      backBtn(); return;
+  }
+  const bounds=[[marker.getLatLng().lat, marker.getLatLng().lng]];
+  $('altList').innerHTML=alts.map((x,i)=>{
+    const [from,to]=Object.entries(x.changed)[0];
+    const d=x.distance_km<10?x.distance_km.toFixed(1)+' km':Math.round(x.distance_km).toLocaleString()+' km';
+    return `<div class="altItem" data-i="${i}">
+      <div class="aw">${x.words}</div>
+      <div class="am">word ${x.position+1}: ${from} → ${to} · ${d} away</div></div>`;
+  }).join('')+backBtn();
+  alts.forEach((x,i)=>{
+    const m=L.marker([x.lat,x.lon],{opacity:0.6}).addTo(map).bindTooltip(Object.values(x.changed)[0]);
+    m.on('click',()=>previewAltChoice(i));
+    altMarkers.push(m); bounds.push([x.lat,x.lon]);
+  });
+  [...$('altList').children].forEach(el=>{ if(el.dataset.i!=null) el.onclick=()=>previewAltChoice(+el.dataset.i); });
+  window._alts=alts;
+  map.fitBounds(bounds,{padding:[50,50]});
+}
+function backBtn(){ return '<div class="altItem" onclick="showAlternatives()" style="text-align:center;color:var(--muted)">← different distance</div>'; }
+function previewAltChoice(i){
+  const x = window._alts[i];
+  if(!x) return;
+
+  previewAlt = x;
+
+  // Highlight selected card
+  document.querySelectorAll('#altList .altItem').forEach((el,index)=>{
+    if(el.dataset.i==null) return;
+
+    if(index===i){
+      el.style.borderColor='var(--accent)';
+      el.style.background='var(--chip)';
+    }else{
+      el.style.borderColor='var(--line)';
+      el.style.background='';
+    }
+  });
+
+  // Preview on map
+  if(previewMarker){
+      map.removeLayer(previewMarker);
+  }
+
+  previewMarker = L.marker([x.lat,x.lon], {
+      opacity:0.8
+  }).addTo(map);
+
+  map.flyTo([x.lat,x.lon], Math.max(map.getZoom(),17), {
+      duration:0.4  
+  });
+    map.flyTo([x.lat,x.lon], Math.max(map.getZoom(),17), {
+      duration:0.4
+    });
+
+  // Add confirmation button if needed
+  let btn=document.getElementById('useAltBtn');
+  if(!btn){
+    btn=document.createElement('button');
+    btn.id='useAltBtn';
+    btn.className='convertBtn';
+    btn.textContent='Use this address';
+    btn.onclick=commitAltChoice;
+    $('altList').appendChild(btn);
+  }
+}
+function commitAltChoice(){
+  if(!previewAlt) return;
+
+  $('wordsIn').value = previewAlt.words;
+  active='words';
+
+  previewAlt=null;
+
+  clearAlts();
+  $('altBtn').style.display='none';
+
+  convert();
 }
 async function fromGPS(){
   const lat=parseFloat($('lat').value), lon=parseFloat($('lon').value);
@@ -205,7 +330,7 @@ async function fromGPS(){
 }
 
 // ONE convert button routes to whichever group was last edited
-function convert(){ clearStatuses(); hideAC();
+function convert(){ clearStatuses(); hideAC(); clearAlts(); $('altBtn').style.display='none';
   if(active==='words') fromWords();
   else if(active==='gps') fromGPS();
   else fromStreet();

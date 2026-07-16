@@ -87,6 +87,64 @@ def decode(text):
     return decode_transfer(text) if _looks_like_transfer(text) else decode_words(text)
 
 
+def alternatives(text, max_results=24):
+    """
+    'That doesn't look right' — plausible alternative addresses for a word address.
+
+    For each word position, substitute nearby dictionary words (edit distance <= 2)
+    and keep combinations whose checksum still validates. Each result carries:
+      - position: which word changed (0-based) — early words move the address far,
+        late words move it slightly, so distance-from-shown diagnoses the bad word
+      - distance_km: how far the alternative lands from the typed address's decode
+      - alt_km: altitude (used to weight results toward ground level)
+
+    Sorted by: near-ground first, then smaller edit distance.
+    """
+    import math
+    from checksum import validate as _validate
+    from geometry import geo_to_xyz
+    parts = (text or "").strip().lower().split("-")
+    if len(parts) < 2:
+        return []
+    *words, check = parts
+    check = check.upper()
+
+    try:
+        base = [D.WORD_TO_INDEX[w] for w in words]
+    except KeyError:
+        return []  # unknown word; normal decode suggestions handle that case
+
+    (blat, blon, balt), _ = _decode(base)
+    bx, by, bz = geo_to_xyz(blat, blon, balt)
+
+    out, seen = [], set()
+    for pos in range(len(words)):
+        for nw, ni, dist in D.neighbors(words[pos], maxd=2, limit=40):
+            trial = base[:]
+            trial[pos] = ni
+            key = tuple(trial)
+            if key in seen or trial == base:
+                continue
+            seen.add(key)
+            if not _validate(trial, check):
+                continue
+            (lat, lon, alt), edge_km = _decode(trial)
+            x, y, z = geo_to_xyz(lat, lon, alt)
+            out.append({
+                "words": "-".join(D.to_words(trial)) + "-" + check,
+                "changed": {words[pos]: nw},
+                "position": pos,
+                "distance": dist,
+                "distance_km": math.sqrt((x-bx)**2 + (y-by)**2 + (z-bz)**2),
+                "lat": lat, "lon": lon, "alt_km": alt,
+                "cell_edge_m": edge_km * 1000.0,
+            })
+    # weight toward ground level (plausible addresses live near the surface),
+    # then prefer the smallest typo
+    out.sort(key=lambda r: (abs(r["alt_km"]), r["distance"]))
+    return out[:max_results]
+
+
 if __name__ == "__main__":
     r = encode_all(51.5074, -0.1278, 0.1, 5)
     print("encode_all:", r)
