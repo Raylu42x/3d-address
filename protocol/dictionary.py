@@ -12,10 +12,25 @@ dictionary — it exists only to exercise the plumbing.
 """
 
 import os
-from checksum import checksum, validate
+from .checksum import checksum, validate
 
 NEEDED = 27000
-DICT_PATH = os.path.join(os.path.dirname(__file__), "words.txt")
+
+
+def _dict_path():
+    """Locate words.txt whether running from source or pip-installed.
+
+    Prefer importlib.resources (correct for an installed package); fall back to
+    a __file__-relative path when this module is executed outside a package.
+    """
+    try:
+        from importlib.resources import files
+        return str(files(__package__).joinpath("words.txt"))
+    except Exception:
+        return os.path.join(os.path.dirname(os.path.abspath(__file__)), "words.txt")
+
+
+DICT_PATH = _dict_path()
 
 
 # --- load or synthesize the word list ---
@@ -182,7 +197,8 @@ def read_address(text):
 
 
 if __name__ == "__main__":
-    from encoder import encode
+    # demo; run with `python -m protocol.dictionary`
+    from protocol.encoder import encode
     print(f"dictionary source: {SOURCE}  ({len(WORD_LIST):,} words)")
     idx = encode(51.5074, -0.1278, 0.1, 5)
     addr = make_address(idx)

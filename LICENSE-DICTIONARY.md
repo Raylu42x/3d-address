@@ -2,7 +2,7 @@
 
 The following files are **not** covered by the MIT license in `LICENSE`:
 
-- `words.txt` — the official 27,000-word protocol dictionary
+- `protocol/words.txt` — the official 27,000-word protocol dictionary
 - `docs/SPEC_v0.2.md` — the protocol specification
 
 These are licensed under **Creative Commons Attribution-NoDerivatives 4.0

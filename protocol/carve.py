@@ -10,7 +10,7 @@ Run directly to print statistics:
 """
 
 import numpy as np
-from geometry import N1, CELL1, HALF, INNER, OUTER, DICT_SIZE
+from .geometry import N1, CELL1, HALF, INNER, OUTER, DICT_SIZE
 
 
 def build_valid_table():

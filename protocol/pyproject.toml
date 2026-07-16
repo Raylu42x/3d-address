@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "waddr"
+version = "0.2.0"
+description = "3D word-based address protocol — the pure encoding/decoding engine"
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+authors = [{ name = "Bennett" }]
+keywords = ["geocoding", "addressing", "protocol", "3d", "words"]
+dependencies = ["numpy"]
+
+[project.urls]
+Homepage = "https://github.com/Raylu42x/wordaddress"
+
+# The engine lives in the `protocol` import package; the distribution is "waddr".
+[tool.setuptools]
+packages = ["protocol"]
+package-dir = { "protocol" = "." }
+
+# words.txt is required at runtime and must ship inside the wheel.
+[tool.setuptools.package-data]
+protocol = ["words.txt"]
+
+[tool.setuptools.exclude-package-data]
+protocol = ["tests/*"]

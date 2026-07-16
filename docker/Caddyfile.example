@@ -1,0 +1,22 @@
+# Host-level Caddy reverse proxy for the word-address app.
+#
+# Caddy runs on the host (not in compose) and terminates TLS, proxying the two
+# public domains to the compose services bound on 127.0.0.1. Domains come from
+# the environment ({$FRONTEND_DOMAIN} / {$API_DOMAIN}) so nothing is hardcoded.
+#
+# Provide them however you run Caddy, e.g.:
+#   export FRONTEND_DOMAIN=address.example.com
+#   export API_DOMAIN=api.example.com
+#   caddy run --config ./Caddyfile
+# (or set them in the caddy.service systemd unit). Caddy provisions HTTPS certs
+# automatically for the named domains.
+
+{$FRONTEND_DOMAIN} {
+	encode zstd gzip
+	reverse_proxy 127.0.0.1:8080
+}
+
+{$API_DOMAIN} {
+	encode zstd gzip
+	reverse_proxy 127.0.0.1:8000
+}

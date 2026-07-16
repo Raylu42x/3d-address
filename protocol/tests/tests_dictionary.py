@@ -1,12 +1,12 @@
-import sys, os; sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+import sys, os; sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 """
 tests_dictionary.py — Phase 3 plumbing tests (run against the placeholder list).
 
     python tests_dictionary.py
 """
 import random
-from encoder import encode, decode
-import dictionary as D
+from protocol.encoder import encode, decode
+import protocol.dictionary as D
 
 rng = random.Random(11)
 _pass = _fail = 0

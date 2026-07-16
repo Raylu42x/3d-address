@@ -1,11 +1,14 @@
-.venv/
-__pycache__/
-*.pyc
+# Build context is the repo root for both images. Keep tests and dev cruft out
+# of the images (constraint: tests are kept in the repo but excluded from Docker).
 .git/
-tests/
+.venv/
+**/__pycache__/
+**/*.pyc
+**/tests/
+**/.DS_Store
 docs/
-build_wordlist.py
-validate_wordlist.py
-.gitignore
-docker-compose.yml
-Dockerfile
+*.egg-info/
+build/
+dist/
+.env
+docker/.env

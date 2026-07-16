@@ -1,4 +1,4 @@
-import sys, os; sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+import sys, os; sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 """
 tests.py — round-trip and property tests for the Phase 1 core.
 
@@ -7,8 +7,8 @@ tests.py — round-trip and property tests for the Phase 1 core.
 
 import math
 import random
-from geometry import geo_to_xyz, INNER, OUTER, R_MEAN
-from encoder import encode, decode, bounds_xyz, valid_cell_count
+from protocol.geometry import geo_to_xyz, INNER, OUTER, R_MEAN
+from protocol.encoder import encode, decode, bounds_xyz, valid_cell_count
 
 
 def _err_m(lat, lon, alt, dlat, dlon, dalt):

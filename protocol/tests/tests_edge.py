@@ -1,4 +1,4 @@
-import sys, os; sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+import sys, os; sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 """
 tests_edge.py — edge-case probes for the Phase 1 core.
 
@@ -10,10 +10,10 @@ seam, cell boundaries, out-of-range inputs), not just to confirm no crashes.
 """
 
 import math
-from geometry import (
+from protocol.geometry import (
     INNER, OUTER, R_MEAN, CELL1, N1, HALF, geo_to_xyz, xyz_to_geo,
 )
-from encoder import encode, decode, bounds_xyz
+from protocol.encoder import encode, decode, bounds_xyz
 
 _pass = 0
 _fail = 0

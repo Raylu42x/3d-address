@@ -11,10 +11,10 @@ further index is a 30^3 child (0..26,999).
 No dictionary or checksum here — those are Phase 4/5. This is the pure spatial core.
 """
 
-from geometry import (
+from .geometry import (
     N1, SUB, HALF, CELL1, INNER, OUTER, R_MEAN, geo_to_xyz, xyz_to_geo,
 )
-from carve import build_valid_table
+from .carve import build_valid_table
 
 # Build the level-1 table once at import.
 _VALID, _RAW2WORD, _WORD2RAW = build_valid_table()

@@ -1,3 +1,13 @@
 __pycache__/
+*.pyc
 .venv/
 .DS_Store
+
+# packaging / build artifacts
+*.egg-info/
+build/
+dist/
+
+# local deployment config (copy docker/.env.example -> docker/.env)
+.env
+docker/.env

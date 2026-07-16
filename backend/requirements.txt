@@ -1,0 +1,7 @@
+# Backend (web layer) dependencies.
+# The protocol engine is installed separately from ../protocol (see Dockerfile).
+fastapi
+uvicorn[standard]
+httpx
+slowapi
+pydantic

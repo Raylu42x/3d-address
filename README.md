@@ -1,7 +1,7 @@
 # 3D Word-Based Address Protocol
 
 An open addressing protocol that maps any point in the near-Earth shell
-(≈8 miles underground to 2,000 km altitude) to a short, human-readable address:
+(≈13 km underground to 2,000 km altitude) to a short, human-readable address:
 
 ```
 installing-herd-chimera-washable-pendent-W        ← the Space Needle
@@ -11,30 +11,59 @@ Global, fully 3D, deterministic. Works the same for a front door, a drone
 waypoint, or a satellite. Includes a web UI that converts between street
 addresses, GPS coordinates, and word addresses on a map.
 
+Addresses are **stable forever**: the geometry and dictionary are frozen, so a
+valid address decodes to the same place in every implementation and every
+version.
+
 ---
 
-## Run it (container)
+## Repository layout
 
-```bash
-docker run -d -p 8000:8000 --restart unless-stopped ghcr.io/raylu42x/wordaddress:latest
+```
+protocol/    the pure engine — the actual product. No web deps (numpy only).
+             pip-installable ("waddr"); ships the official words.txt dictionary.
+backend/     FastAPI service that imports the protocol package. Geocoding,
+             CORS, and rate limiting. Serves the API only (versioned under /v1).
+frontend/    the static web UI (index.html) + nginx image. Talks to the backend
+             via a configurable API base URL.
+docker/      docker-compose + host Caddy reverse-proxy example + .env.example.
+docs/        the spec, API reference, install guide, and dictionary brief.
 ```
 
-Open `http://localhost:8000` — web UI. `http://localhost:8000/docs` — API docs.
-Change the left side of `-p` to serve a different port (e.g. `-p 3000:8000`).
-
-Or from source:
+## Quick start (Docker)
 
 ```bash
 git clone https://github.com/Raylu42x/wordaddress && cd wordaddress
-docker compose up -d --build
+cp docker/.env.example docker/.env      # edit domains / API_BASE / CORS
+cd docker && docker compose up -d --build
 ```
 
-## Run it (Python, no Docker)
+Backend on `127.0.0.1:8000`, frontend on `127.0.0.1:8080`. Put a reverse proxy
+(see [`docker/Caddyfile.example`](docker/Caddyfile.example)) in front for public
+HTTPS. Full walkthrough: [`docs/INSTALL.md`](docs/INSTALL.md).
+
+## Quick start (Python, no Docker)
 
 ```bash
 python3 -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
-uvicorn api:app --reload
+pip install ./protocol                  # the engine
+pip install -r backend/requirements.txt
+cd backend && uvicorn app:app --reload  # http://127.0.0.1:8000/docs
+```
+
+Serve `frontend/` with any static server; it defaults to `http://localhost:8000`
+and can be pointed elsewhere via the in-app Settings gear.
+
+## Use the engine directly
+
+The protocol package has no web dependencies — use it as a library:
+
+```python
+from protocol import encode_all, decode
+
+info = encode_all(51.5074, -0.1278, alt_km=0.1, words=5)
+print(info["words"])                 # dinosaur-epidural-usable-bingo-dusty-C
+print(decode(info["words"])["lat"])  # 51.5074...
 ```
 
 ---
@@ -61,30 +90,45 @@ subdivision per added word — hence the 27,000-word dictionary. Full detail:
 
 ## API
 
+Functional endpoints are versioned under `/v1`; `/health` is unversioned;
+interactive docs live at `/docs`.
+
 ```
-POST /encode           {lat, lon, alt_km, words, format} -> address + cell geometry
-POST /decode           {address}                         -> location + precision
-GET  /geocode?q=       street address -> coordinates      (Nominatim)
-GET  /geocode_suggest  autocomplete for partial input     (Photon)
-GET  /reverse?lat&lon  coordinates -> street address      (Nominatim)
+POST /v1/encode          {lat, lon, alt_km, words, format} -> address + geometry
+POST /v1/decode          {address}                         -> location + precision
+POST /v1/alternatives    {address}                         -> nearby valid addresses
+GET  /v1/geocode?q=      street address -> coordinates      (Nominatim)
+GET  /v1/geocode_suggest autocomplete for partial input     (Photon)
+GET  /v1/reverse?lat&lon coordinates -> street address      (Nominatim)
 GET  /health
 ```
 
-Geocoding uses free public OSM services (rate-limited, ~1 req/s) — fine for
-personal use; swap in a commercial geocoder for heavy traffic.
+Full request/response examples: [`docs/API.md`](docs/API.md).
 
-## Repository
+Geocoding uses free public OSM services (rate-limited by default) — fine for
+personal use; point `NOMINATIM_URL`/`PHOTON_URL` at your own instance, or set
+`GEOCODER_ENABLED=false`, for heavy traffic.
 
+## Tests
+
+Tests live next to what they cover and are excluded from the Docker images.
+
+```bash
+# protocol engine (run with the package installed, from the repo root)
+python protocol/tests/tests.py
+python protocol/tests/tests_edge.py
+python protocol/tests/tests_checksum.py
+python protocol/tests/tests_dictionary.py
+python protocol/tests/test_vectors.py     # frozen encode/decode vectors
+
+# backend API
+python backend/tests/test_api.py
+python -m unittest backend.tests.test_api_validation
 ```
-geometry.py  carve.py  encoder.py     spatial core (frozen by spec)
-checksum.py  dictionary.py            error detection + word layer
-address.py   api.py   static/         facade, REST API, web UI
-words.txt                             the official dictionary (do not modify)
-tests/                                five test suites
-docs/                                 specification + dictionary build brief
-```
 
-Run tests from the repo root: `python3 tests/tests.py` (same pattern for the others).
+`protocol/tests/vectors.json` pins `(lat, lon, alt, words) -> address` for a
+diverse set of points; `test_vectors.py` fails if encoder output ever drifts —
+the guardrail that keeps addresses decodable forever.
 
 ## License
 
@@ -92,15 +136,15 @@ Split license — see [`LICENSE`](LICENSE) and
 [`LICENSE-DICTIONARY.md`](LICENSE-DICTIONARY.md):
 
 - **Code — MIT.** Use it, change it, build on it, sell it.
-- **`words.txt` + spec — CC BY-ND 4.0.** Use and redistribute freely, but
-  **modified versions may not be distributed.** Every implementation must share
-  the identical dictionary and geometry or addresses silently break; the frozen
-  files are what make addresses interoperable. Modified forks should use a
-  different protocol name to avoid confusion (see the compatibility policy in
+- **`protocol/words.txt` + spec — CC BY-ND 4.0.** Use and redistribute freely,
+  but **modified versions may not be distributed.** Every implementation must
+  share the identical dictionary and geometry or addresses silently break; the
+  frozen files are what make addresses interoperable. Modified forks should use
+  a different protocol name to avoid confusion (see the compatibility policy in
   `LICENSE-DICTIONARY.md`).
 
 ## Status
 
 Core, checksum, dictionary, API, and UI complete and tested. Future: `orbit.`/
 `deep.` prefixes, premium alias words (surplus indices above 27,000), a
-"did-you-mean" disambiguator for confusable addresses. 
+"did-you-mean" disambiguator for confusable addresses.

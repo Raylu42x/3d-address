@@ -1,0 +1,43 @@
+# Word-address app: backend API + frontend UI.
+#
+# Both services bind to 127.0.0.1 only, so nothing is exposed publicly here.
+# A host-level reverse proxy (see Caddyfile.example) terminates TLS and proxies
+# the public domains to these local ports.
+#
+# Config comes from .env (copy .env.example -> .env first). Build context is the
+# repo root (..), so the backend image can install ../protocol.
+
+services:
+  backend:
+    build:
+      context: ..
+      dockerfile: backend/Dockerfile
+    image: wordaddress-backend
+    container_name: wordaddress-backend
+    restart: unless-stopped
+    environment:
+      - CORS_ORIGINS=${CORS_ORIGINS:-}
+      - RATE_LIMIT_ENABLED=${RATE_LIMIT_ENABLED:-true}
+      - RATE_LIMIT_PROTOCOL=${RATE_LIMIT_PROTOCOL:-}
+      - RATE_LIMIT_GEOCODE=${RATE_LIMIT_GEOCODE:-1/second}
+      - GEOCODER_ENABLED=${GEOCODER_ENABLED:-true}
+      - NOMINATIM_URL=${NOMINATIM_URL:-https://nominatim.openstreetmap.org}
+      - PHOTON_URL=${PHOTON_URL:-https://photon.komoot.io}
+      - GEO_USER_AGENT=${GEO_USER_AGENT:-WordAddressProtocol/0.2 (self-hosted)}
+    ports:
+      - "127.0.0.1:8000:8000"
+
+  frontend:
+    build:
+      context: ..
+      dockerfile: frontend/Dockerfile
+    image: wordaddress-frontend
+    container_name: wordaddress-frontend
+    restart: unless-stopped
+    environment:
+      # Public API origin the browser calls. In production this is https://API_DOMAIN.
+      - API_BASE=${API_BASE:-}
+    ports:
+      - "127.0.0.1:8080:80"
+    depends_on:
+      - backend

@@ -12,9 +12,9 @@ ONLY these functions, never the internals.
 
 `None` from an encode means the point is outside the addressable shell.
 """
-from encoder import encode as _encode, decode as _decode
-from checksum import format_transfer, parse_transfer
-import dictionary as D
+from .encoder import encode as _encode, decode as _decode
+from .checksum import format_transfer, parse_transfer
+from . import dictionary as D
 
 
 # ---------- encode ----------
@@ -101,8 +101,8 @@ def alternatives(text, max_results=24):
     Sorted by: near-ground first, then smaller edit distance.
     """
     import math
-    from checksum import validate as _validate
-    from geometry import geo_to_xyz
+    from .checksum import validate as _validate
+    from .geometry import geo_to_xyz
     parts = (text or "").strip().lower().split("-")
     if len(parts) < 2:
         return []
@@ -146,6 +146,7 @@ def alternatives(text, max_results=24):
 
 
 if __name__ == "__main__":
+    # demo; run with `python -m protocol.address`
     r = encode_all(51.5074, -0.1278, 0.1, 5)
     print("encode_all:", r)
     print("decode words:", decode(r["words"]))

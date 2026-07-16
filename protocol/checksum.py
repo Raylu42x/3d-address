@@ -66,7 +66,8 @@ def format_human(indices):
 
 
 if __name__ == "__main__":
-    from encoder import encode
+    # demo; run with `python -m protocol.checksum`
+    from protocol.encoder import encode
     idx = encode(51.5074, -0.1278, 0.1, 5)   # London
     print("indices  :", idx)
     print("checksum :", checksum(idx))

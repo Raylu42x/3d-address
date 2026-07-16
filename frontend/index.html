@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>3D Word Address</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<style>
+  :root{
+    --bg:#faf9f5; --panel:#ffffff; --ink:#1a1915; --muted:#6b6a63;
+    --line:#e7e5de; --accent:#1d9e75; --accent2:#137a58; --chip:#f0efe9;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+       background:var(--bg);color:var(--ink)}
+  header{position:relative;padding:32px 22px 18px;border-bottom:1px solid var(--line);background:var(--panel)}
+  header h1{margin:0;font-size:20px;font-weight:600;letter-spacing:-0.01em}
+  header p{margin:2px 0 0;color:var(--muted);font-size:13px}
+  .gear{position:absolute;top:18px;right:18px;width:38px;height:38px;display:flex;align-items:center;justify-content:center;
+        border:1px solid var(--line);border-radius:9px;background:var(--panel);color:var(--muted);cursor:pointer}
+  .gear:hover{border-color:var(--accent);color:var(--accent2)}
+  .settings-opt{display:block;border:1px solid var(--line);border-radius:9px;padding:10px 12px;margin-top:8px;cursor:pointer}
+  .settings-opt.sel{border-color:var(--accent);background:var(--chip)}
+  .settings-opt .t{font-weight:600;font-size:13px}
+  .settings-opt .d{color:var(--muted);font-size:12px;margin-top:2px;word-break:break-all}
+  .wrap{display:grid;grid-template-columns:1fr 400px;gap:0;
+        height:calc(100vh - 82px);height:calc(100dvh - 82px)}
+  #map{height:100%;width:100%;min-height:240px}
+  .side{border-left:1px solid var(--line);background:var(--panel);overflow-y:auto;padding:18px;min-width:0}
+  .card{border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:14px;min-width:0}
+  .card h2{margin:0 0 8px;font-size:13px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+  label{display:block;font-size:12px;color:var(--muted);margin:8px 0 3px}
+  input,textarea,select{
+    width:100%;
+    max-width:100%;
+    padding:9px 11px;
+    border:1px solid var(--line);
+    border-radius:8px;
+    font:inherit;
+    background:#fff;
+    color:var(--ink);
+    min-width:0;
+  }
+  textarea{
+    resize:vertical;
+    min-height:48px;
+    line-height:1.4;
+    overflow-wrap:anywhere;
+  }
+  .row{display:flex;gap:8px;min-width:0}
+  .row>div{flex:1;min-width:0}
+  .row>div.narrow{flex:0 0 84px}
+  .convertBtn{margin:2px 0 14px;width:100%;padding:12px;border:0;border-radius:10px;background:var(--accent);
+       color:#fff;font:inherit;font-weight:600;font-size:16px;cursor:pointer}
+  .convertBtn:hover{background:var(--accent2)}
+  .convertBtn:disabled{opacity:.75;cursor:wait}
+  .mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px}
+  .status{font-size:12px;margin-top:8px;min-height:16px}
+  .status.err{color:#b23b3b}
+  .status.ok{color:var(--accent2)}
+  .status.busy{color:var(--muted)}
+  .hint{font-size:11px;color:var(--muted);margin-top:4px}
+  .badge{display:inline-block;font-size:11px;padding:1px 7px;border-radius:20px;background:var(--chip);color:var(--muted)}
+  .altBtn{margin-top:10px;width:100%;padding:9px;border:1px solid var(--line);border-radius:8px;
+      background:var(--chip);color:var(--ink);font:inherit;font-size:13px;cursor:pointer}
+  .altBtn:hover{border-color:var(--accent)}
+  .actions{display:flex;gap:8px;margin-top:8px}
+  .actions .altBtn{margin-top:0;flex:1}
+  .output{margin-top:8px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--chip)}
+  .output .label{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:0 0 4px}
+  .output .value{font-family:ui-monospace,Menlo,monospace;font-size:12px;word-break:break-all}
+  .precision{margin-top:8px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:#f8fbf9}
+  .precision .bar{display:flex;gap:4px;margin:6px 0 4px}
+  .precision .bar span{display:block;height:6px;border-radius:999px;background:var(--line);flex:1}
+  .precision .bar span.filled{background:var(--accent)}
+  .corrections{margin-top:8px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:#fcfaf5}
+  .corrections ul{margin:4px 0 0;padding-left:18px}
+  .altItem{border:1px solid var(--line);border-radius:8px;padding:8px 10px;margin-top:8px;cursor:pointer;font-size:12px}
+  .altItem:hover{border-color:var(--accent);background:var(--chip)}
+  .altItem .aw{font-family:ui-monospace,Menlo,monospace;font-size:12px;word-break:break-all}
+  .altItem .am{color:var(--muted);margin-top:2px}
+  /* autocomplete */
+  .ac-wrap{position:relative;min-width:0}
+  .ac{position:absolute;top:100%;left:0;right:0;z-index:1000;background:#fff;border:1px solid var(--line);
+      border-radius:0 0 10px 10px;box-shadow:0 8px 20px rgba(0,0,0,.08);max-height:220px;overflow-y:auto;display:none}
+  .ac div{padding:9px 12px;font-size:13px;cursor:pointer;border-top:1px solid var(--line);
+      white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .ac div:first-child{border-top:0}
+  .ac div:hover,.ac div.sel{background:var(--chip)}
+  .historyItem{display:block;width:100%;text-align:left;padding:8px 0;border-top:1px solid var(--line);font-size:12px;cursor:pointer}
+  .historyItem:first-child{border-top:0;padding-top:0}
+  .historyItem .hw{font-family:ui-monospace,Menlo,monospace;word-break:break-all}
+  .historyItem .hm{color:var(--muted);margin-top:2px}
+  .modal{position:fixed;inset:0;background:rgba(0,0,0,.35);display:none;align-items:center;justify-content:center;padding:18px;z-index:2000}
+  .modal .panel{background:#fff;border-radius:14px;padding:18px;border:1px solid var(--line);max-width:320px;width:100%}
+  .modal .panel h3{margin:0 0 10px;font-size:16px}
+  .modal .panel .qr{display:flex;justify-content:center;margin:10px 0 12px}
+  .modal .panel .meta{font-size:12px;color:var(--muted);word-break:break-all}
+  @media (max-width: 760px){
+    header{padding:20px 16px 12px}
+    header h1{font-size:18px}
+    .wrap{grid-template-columns:1fr;height:auto;min-height:calc(100dvh - 70px)}
+    #map{height:42dvh;min-height:280px}
+    .side{border-left:0;border-top:1px solid var(--line);padding:14px}
+    input,select,.convertBtn{font-size:16px}
+  }
+</style>
+</head>
+<body>
+<header>
+  <button class="gear" id="gearBtn" title="Server settings" aria-label="Server settings" onclick="openSettings()">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+  </button>
+  <h1>3D Word-Based Address</h1>
+  <p>Fill in any one form, hit Convert, and get the others</p>
+</header>
+<div class="wrap">
+  <div id="map"></div>
+  <div class="side">
+
+    <button class="convertBtn" id="convertBtn" onclick="convert()">Convert</button>
+
+    <!-- STREET ADDRESS -->
+    <div class="card">
+      <h2>Street address</h2>
+      <div class="ac-wrap">
+        <textarea id="street" rows="2" placeholder="Washington Monument Wa DC"></textarea>
+        <div class="ac" id="streetAC"></div>
+      </div>
+      <div class="status" id="stStatus"></div>
+    </div>
+
+    <!-- WORD ADDRESS -->
+    <div class="card">
+      <h2>Word address</h2>
+      <textarea id="wordsIn" class="mono" rows="2" placeholder="trot-viper-ripe-expiate-bafegab-C"></textarea>
+      <label>Precision (words)</label>
+      <select id="wordCount">
+        <option value="3">3 — ~460 m (block)</option>
+        <option value="4">4 — ~15 m (property)</option>
+        <option value="5" selected>5 — ~51 cm (door)</option>
+        <option value="6">6 — ~1.7 cm</option>
+        <option value="7">7 — ~0.6 mm</option>
+      </select>
+      <div class="hint">up to 7 words + checksum letter · typos auto-correct</div>
+      <div class="status" id="woStatus"></div>
+      <div id="precisionBox" class="precision" style="display:none"></div>
+      <div id="correctionsBox" class="corrections" style="display:none"></div>
+      <div class="actions">
+        <button class="altBtn" id="copyWordBtn" onclick="copyWordAddress()">Copy words</button>
+        <button class="altBtn" id="qrBtn" onclick="showQr()">QR code</button>
+      </div>
+      <button class="altBtn" id="altBtn" style="display:none" onclick="showAlternatives()">That doesn't look right?</button>
+      <div id="altList"></div>
+    </div>
+
+    <!-- GPS -->
+    <div class="card">
+      <h2>GPS</h2>
+      <div class="row">
+        <div><label>Latitude</label><input id="lat" type="number" step="any" placeholder="51.5074"></div>
+        <div><label>Longitude</label><input id="lon" type="number" step="any" placeholder="-0.1278"></div>
+      </div>
+      <div class="row">
+        <div><label>Altitude <span class="badge">blank = ground</span></label>
+          <input id="alt" type="number" step="any" placeholder="ground"></div>
+        <div class="narrow"><label>Unit</label>
+          <select id="unit">
+            <option value="m">m</option><option value="km">km</option>
+            <option value="ft">ft</option><option value="mi">mi</option>
+          </select>
+        </div>
+      </div>
+      <div class="status" id="gpStatus"></div>
+      <div id="altSummary" class="output" style="display:none"></div>
+      <div class="actions">
+        <button class="altBtn" onclick="copyGps()">Copy GPS</button>
+        <button class="altBtn" onclick="copyShareLink()">Copy link</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Recent addresses</h2>
+      <div id="historyList"></div>
+    </div>
+
+  </div>
+</div>
+
+<div id="qrModal" class="modal" onclick="if(event.target.id==='qrModal') closeQr();">
+  <div class="panel">
+    <h3>QR share</h3>
+    <div id="qrCode" class="qr"></div>
+    <div id="qrMeta" class="meta"></div>
+    <div class="actions" style="margin-top:10px">
+      <button class="altBtn" onclick="copyShareLink()">Copy link</button>
+      <button class="altBtn" onclick="closeQr()">Close</button>
+    </div>
+  </div>
+</div>
+
+<div id="settingsModal" class="modal" onclick="if(event.target.id==='settingsModal') closeSettings();">
+  <div class="panel">
+    <h3>API server</h3>
+    <div id="settingsOpts">
+      <div class="settings-opt" data-mode="official" onclick="pickServer('official')">
+        <div class="t">Official</div>
+        <div class="d" id="optOfficialUrl">the hosted API</div>
+      </div>
+      <div class="settings-opt" data-mode="local" onclick="pickServer('local')">
+        <div class="t">Local</div>
+        <div class="d">http://localhost:8000 — a backend on your machine</div>
+      </div>
+      <div class="settings-opt" data-mode="custom" onclick="pickServer('custom')">
+        <div class="t">Custom URL</div>
+        <div class="d">point at your own self-hosted backend</div>
+        <input id="customUrl" type="url" placeholder="https://api.example.com" style="margin-top:8px" onclick="event.stopPropagation()">
+      </div>
+    </div>
+    <div class="actions" style="margin-top:12px">
+      <button class="convertBtn" style="margin:0" onclick="saveSettings()">Save</button>
+      <button class="altBtn" style="margin-top:0" onclick="closeSettings()">Cancel</button>
+    </div>
+    <div class="hint" id="settingsHint" style="margin-top:8px"></div>
+  </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.4.0/qrcode.min.js"></script>
+<script src="config.js"></script>
+<script>
+const map = L.map('map', {
+  worldCopyJump:true, maxBounds:[[-90,-180],[90,180]], maxBoundsViscosity:1.0
+}).setView([51.5074, -0.1278], 12);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+  {maxZoom:19, minZoom:2, noWrap:true, attribution:'© OpenStreetMap'}).addTo(map);
+let marker = L.marker([51.5074, -0.1278]).addTo(map);
+let previewMarker = null;
+let cellLayer = null;
+let previewAlt = null;
+
+const $=id=>document.getElementById(id);
+const FACT={m:1, km:1000, ft:0.3048, mi:1609.344};
+const PRECISION_BY_WORDS={3:{label:'~460 m', desc:'block'}, 4:{label:'~15 m', desc:'property'}, 5:{label:'~51 cm', desc:'door'}, 6:{label:'~1.7 cm', desc:'device'}, 7:{label:'~0.6 mm', desc:'robotics'}};
+let active='street';
+let isBusy=false;
+function altKmFromBox(){ const v=parseFloat($('alt').value); return isNaN(v)?null:(v*FACT[$('unit').value]/1000); }
+function setAltBox(km){ $('alt').value=(km*1000/FACT[$('unit').value]).toFixed(1); }
+function setBusy(busy){ isBusy=busy; const btn=$('convertBtn'); btn.disabled=busy; btn.textContent=busy?'Converting…':'Convert'; }
+function setStatus(id,msg,ok){ const el=$(id); el.textContent=msg; el.className='status '+(ok?'ok':(msg&&msg.includes('Converting')?'busy':'err')); }
+function clearStatuses(){ ['stStatus','woStatus','gpStatus'].forEach(i=>{$(i).textContent='';}); }
+function clearFeedback(){ $('precisionBox').style.display='none'; $('correctionsBox').style.display='none'; $('altSummary').style.display='none'; $('altBtn').style.display='none'; }
+function showPrecision(wordsUsed){ const spec=PRECISION_BY_WORDS[wordsUsed]||PRECISION_BY_WORDS[5]; const filled=Array.from({length:5},(_,i)=>i<Math.min(5,Math.max(1,wordsUsed-2))?'<span class="filled"></span>':'<span></span>').join(''); $('precisionBox').innerHTML=`<div class="label">Accuracy</div><div class="bar">${filled}</div><div>${wordsUsed} words · ≈ ${spec.label} cell · ${spec.desc}</div>`; $('precisionBox').style.display='block'; }
+function showCorrections(corrections){ if(!corrections||!Object.keys(corrections).length){ $('correctionsBox').style.display='none'; return; } const items=Object.entries(corrections).map(([k,v])=>`<li>${k} → ${v}</li>`).join(''); $('correctionsBox').innerHTML=`<div class="label">Corrected</div><ul>${items}</ul>`; $('correctionsBox').style.display='block'; }
+function showAltitudeSummary(groundKm, addressAltKm){ const groundM=groundKm*1000; const addrM=addressAltKm==null?0:addressAltKm*1000; const finalM=groundM+addrM; $('altSummary').innerHTML=`<div class="label">Altitude summary</div><div class="value">Ground elevation: ${groundM.toFixed(1)} m · Address altitude: ${addrM.toFixed(1)} m · Final height: ${finalM.toFixed(1)} m</div>`; $('altSummary').style.display='block'; }
+function buildShareUrl(address){ const url=new URL(window.location.href); if(address){ url.searchParams.set('address', address); url.hash=address; } else { url.searchParams.delete('address'); url.hash=''; } return url.toString(); }
+function syncShareUrl(address){ const url=buildShareUrl(address); window.history.replaceState({},'',url); }
+function copyText(text, successMessage){ const fallback=()=>{ const ta=document.createElement('textarea'); ta.value=text; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); }; if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(text).then(()=>setStatus('woStatus',successMessage,true)).catch(fallback); } else { fallback(); setStatus('woStatus',successMessage,true); } }
+function copyWordAddress(){ const addr=$('wordsIn').value.trim(); if(!addr){ setStatus('woStatus','convert first to copy a word address',false); return; } copyText(addr,'word address copied'); }
+function copyGps(){ const lat=$('lat').value.trim(); const lon=$('lon').value.trim(); if(!lat||!lon){ setStatus('gpStatus','convert first to copy GPS',false); return; } copyText(`${lat}, ${lon}`,'GPS copied'); }
+function copyShareLink(){ const addr=$('wordsIn').value.trim(); const shareUrl=buildShareUrl(addr||null); const done=()=>{ setStatus('woStatus','share link copied',true); setStatus('gpStatus','share link copied',true); }; if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(shareUrl).then(done).catch(done); } else { const ta=document.createElement('textarea'); ta.value=shareUrl; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); done(); } }
+function closeQr(){ $('qrModal').style.display='none'; }
+function buildQrFallback(text, size=180){
+  const encoded=encodeURIComponent(text);
+  return `<img src="https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encoded}" alt="QR code for ${text}" style="display:block;max-width:${size}px;max-height:${size}px;width:100%;height:auto">`;
+}
+function showQr(){ const addr=$('wordsIn').value.trim(); if(!addr){ setStatus('woStatus','convert first to create a QR code',false); return; } const shareUrl=buildShareUrl(addr); $('qrMeta').textContent=shareUrl; $('qrCode').innerHTML=''; try{ if(window.QRCode){ new QRCode($('qrCode'), {text:shareUrl, width:180, height:180, colorDark:'#1a1915', colorLight:'#ffffff'}); } else { throw new Error('qrcode unavailable'); } } catch(e){ $('qrCode').innerHTML=buildQrFallback(shareUrl,180); } $('qrModal').style.display='flex'; }
+function saveHistory(item){ try{ const list=JSON.parse(localStorage.getItem('word-address-history')||'[]'); const next=[item,...list.filter(x=>x.address!==item.address)].slice(0,8); localStorage.setItem('word-address-history', JSON.stringify(next)); renderHistory(next); } catch(e){} }
+function renderHistory(list){ if(!list.length){ $('historyList').innerHTML='<div class="hint">No recent addresses yet.</div>'; return; } $('historyList').innerHTML=list.map(x=>`<button class="historyItem" onclick="loadHistoryItem(${JSON.stringify(x).replace(/"/g,'&quot;')})"><div class="hw">${x.address}</div><div class="hm">${x.label}</div></button>`).join(''); }
+function loadHistoryItem(item){ $('wordsIn').value=item.address; active='words'; $('lat').value=item.lat.toFixed(6); $('lon').value=item.lon.toFixed(6); $('alt').value=''; convert(); }
+function loadHistory(){ try{ const list=JSON.parse(localStorage.getItem('word-address-history')||'[]'); renderHistory(list); } catch(e){ renderHistory([]); } }
+
+// track which group the user last edited -> the single Convert routes there
+['street'].forEach(i=>$(i).addEventListener('input',()=>active='street'));
+$('wordsIn').addEventListener('input',()=>active='words');
+['lat','lon','alt'].forEach(i=>$(i).addEventListener('input',()=>active='gps'));
+
+function drawCell(lat,lon,edge_m){
+  if(cellLayer) map.removeLayer(cellLayer);
+  const dLat=(edge_m/2)/111320, dLon=(edge_m/2)/(111320*Math.cos(lat*Math.PI/180)||1);
+  cellLayer=L.rectangle([[lat-dLat,lon-dLon],[lat+dLat,lon+dLon]],
+    {color:'#1d9e75',weight:2,fillColor:'#1d9e75',fillOpacity:0.15}).addTo(map);
+}
+function focusCell(lat,lon,edge){ marker.setLatLng([lat,lon]); drawCell(lat,lon,edge||1);
+  map.fitBounds(cellLayer.getBounds(),{maxZoom:19,padding:[60,60]}); }
+
+async function requestJSON(url, options={}){ const ctrl=new AbortController(); const timeoutId=setTimeout(()=>ctrl.abort(), options.timeoutMs||10000); try{ const response=await fetch(url,{...options,signal:ctrl.signal}); const contentType=response.headers.get('content-type')||''; const payload=contentType.includes('application/json')?await response.json():await response.text(); if(!response.ok){ const message=typeof payload==='object' ? (payload.error || payload.detail || 'request failed') : String(payload || 'request failed'); throw new Error(message); } return payload; } catch(err){ if(err.name==='AbortError') throw new Error('request timed out'); throw err; } finally { clearTimeout(timeoutId); } }
+// --- API base resolution: Settings override (localStorage) -> config.js default ---
+const API_STORE_KEY='word-address-api';
+function resolveApiBase(){
+  try{
+    const s=JSON.parse(localStorage.getItem(API_STORE_KEY)||'null');
+    if(s){
+      if(s.mode==='custom'&&s.url) return String(s.url).replace(/\/+$/,'');
+      if(s.mode==='local') return 'http://localhost:8000';
+    }
+  }catch(e){}
+  return String(window.API_BASE||'').replace(/\/+$/,'');  // official / injected default
+}
+function api(path){ return resolveApiBase()+path; }
+async function post(url,body){ return requestJSON(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}); }
+async function getJSON(url){ return requestJSON(url); }
+async function elevationKm(lat,lon){ try{ const d=await getJSON(`https://api.open-meteo.com/v1/elevation?latitude=${lat}&longitude=${lon}`); return (d.elevation&&d.elevation[0]!=null)?d.elevation[0]/1000:0; }catch(e){ return 0; } }
+
+async function fillAll(lat, lon, altKm, opts={}){
+  let groundKm=await elevationKm(lat,lon);
+  if(altKm==null) altKm=groundKm;
+  $('lat').value=lat.toFixed(6); $('lon').value=lon.toFixed(6); setAltBox(altKm);
+  let edge=opts.edge;
+  if(!opts.wordsAlready){
+    const enc=await post(api('/v1/encode'),{lat,lon,alt_km:altKm,words:parseInt($('wordCount').value),format:'all'});
+    if(!enc.ok){ setStatus(opts.statusId||'gpStatus', enc.error||'outside addressable shell', false); return null; }
+    $('wordsIn').value=enc.words; lat=enc.lat; lon=enc.lon; edge=enc.cell_edge_m;
+    showPrecision(enc.words.split('-').length - 1);
+  }
+  if(!opts.streetAlready){
+    try{ const rev=await getJSON(api(`/v1/reverse?lat=${lat}&lon=${lon}`)); $('street').value=(rev.ok&&rev.display_name)?rev.display_name:''; }catch(e){}
+  }
+  showAltitudeSummary(groundKm, altKm);
+  focusCell(lat,lon,edge);
+  const address=$('wordsIn').value.trim();
+  if(address){
+    syncShareUrl(address);
+    const words=(address.match(/-/g)||[]).length + 1;
+    saveHistory({address, lat, lon, label:`${words} words`});
+  }
+  return {lat,lon,edge,groundKm,altKm};
+}
+
+async function fromStreet(){
+  const q=$('street').value.trim();
+  if(!q){ setStatus('stStatus','enter a street address',false); return; }
+  setStatus('stStatus','Converting…',true);
+  try{
+    const g=await getJSON(api(`/v1/geocode?q=${encodeURIComponent(q)}`));
+    if(!g.ok){ setStatus('stStatus',g.error||'address not found',false); return; }
+    const start=performance.now();
+    const r=await fillAll(g.lat,g.lon,null,{streetAlready:true,statusId:'stStatus'});
+    if(r) setStatus('stStatus',`converted · ground level · ${Math.round(performance.now()-start)}ms`,true);
+  } catch(err){ setStatus('stStatus','network error: '+err.message,false); }
+}
+async function fromWords(){
+  const a=$('wordsIn').value.trim();
+  if(!a){ setStatus('woStatus','enter a word address',false); return; }
+  setStatus('woStatus','Converting…',true);
+  try{
+    const d=await post(api('/v1/decode'),{address:a});
+    if(!d.ok){ let m='could not resolve'; if(d.suggestions) m+=' — try: '+Object.values(d.suggestions).map(s=>s[0]).join(', '); setStatus('woStatus',m,false); return; }
+    showCorrections(d.corrections||{});
+    const wordsArr=d.words||a.split('-').slice(0,-1);
+    const checksum=(a.split('-').pop()||'').toUpperCase();
+    $('wordsIn').value=wordsArr.join('-')+'-'+checksum;
+    const start=performance.now();
+    const r=await fillAll(d.lat,d.lon,d.alt_km,{wordsAlready:true,edge:d.cell_edge_m,statusId:'woStatus'});
+    if(r){
+      showPrecision(wordsArr.length);
+      setStatus('woStatus',(d.corrections&&Object.keys(d.corrections).length)?'corrected · '+JSON.stringify(d.corrections):'converted',true);
+      setStatus('woStatus',`${(d.corrections&&Object.keys(d.corrections).length)?'corrected · '+JSON.stringify(d.corrections):'converted'} · ${Math.round(performance.now()-start)}ms`,true);
+      $('altBtn').style.display='block';
+    }
+  } catch(err){ setStatus('woStatus','network error: '+err.message,false); }
+}
+
+// --- "that doesn't look right" -> ask how far off, then diagnose the bad word ---
+let altMarkers=[];
+function clearAlts(){
+  $('altList').innerHTML='';
+  altMarkers.forEach(m=>map.removeLayer(m));
+  altMarkers=[];
+  previewAlt=null;
+  if(previewMarker){
+      map.removeLayer(previewMarker);
+      previewMarker = null;
+  }
+}
+
+async function showAlternatives(){
+  clearAlts();
+  // step 1: ask how far off the shown location looks
+  $('altList').innerHTML=`
+    <div class="hint" style="margin-top:10px">How far off does the shown location look?</div>
+    <div class="altItem" onclick="altBand('close')"><b>Close</b><div class="am">right area, wrong spot — a late word is off</div></div>
+    <div class="altItem" onclick="altBand('far')"><b>Far</b><div class="am">wrong town or city — a middle word is off</div></div>
+    <div class="altItem" onclick="altBand('veryfar')"><b>Very far</b><div class="am">wrong region or country — an early word is off</div></div>`;
+}
+
+async function altBand(band){
+  $('altList').innerHTML='<div class="hint" style="margin-top:8px">searching…</div>';
+  const a=$('wordsIn').value.trim();
+  const res=await post(api('/v1/alternatives'),{address:a});
+  let alts=res.alternatives||[];
+  // distance from the shown decode diagnoses which word was mistyped
+  const inBand = d => band==='close' ? d<10 : band==='far' ? (d>=10&&d<1000) : d>=1000;
+  alts=alts.filter(x=>inBand(x.distance_km));
+  if(!alts.length){
+    $('altList').innerHTML='<div class="hint" style="margin-top:8px">no checksum-valid alternatives in that range — try another distance, or re-check the address with its sender</div>'+
+      backBtn(); return;
+  }
+  const bounds=[[marker.getLatLng().lat, marker.getLatLng().lng]];
+  $('altList').innerHTML=alts.map((x,i)=>{
+    const [from,to]=Object.entries(x.changed)[0];
+    const d=x.distance_km<10?x.distance_km.toFixed(1)+' km':Math.round(x.distance_km).toLocaleString()+' km';
+    return `<div class="altItem" data-i="${i}">
+      <div class="aw">${x.words}</div>
+      <div class="am">word ${x.position+1}: ${from} → ${to} · ${d} away</div></div>`;
+  }).join('')+backBtn();
+  alts.forEach((x,i)=>{
+    const m=L.marker([x.lat,x.lon],{opacity:0.6}).addTo(map).bindTooltip(Object.values(x.changed)[0]);
+    m.on('click',()=>previewAltChoice(i));
+    altMarkers.push(m); bounds.push([x.lat,x.lon]);
+  });
+  [...$('altList').children].forEach(el=>{ if(el.dataset.i!=null) el.onclick=()=>previewAltChoice(+el.dataset.i); });
+  window._alts=alts;
+  map.fitBounds(bounds,{padding:[50,50]});
+}
+function backBtn(){ return '<div class="altItem" onclick="showAlternatives()" style="text-align:center;color:var(--muted)">← different distance</div>'; }
+function previewAltChoice(i){
+  const x = window._alts[i];
+  if(!x) return;
+
+  previewAlt = x;
+
+  // Highlight selected card
+  document.querySelectorAll('#altList .altItem').forEach((el,index)=>{
+    if(el.dataset.i==null) return;
+
+    if(index===i){
+      el.style.borderColor='var(--accent)';
+      el.style.background='var(--chip)';
+    }else{
+      el.style.borderColor='var(--line)';
+      el.style.background='';
+    }
+  });
+
+  // Preview on map
+  if(previewMarker){
+      map.removeLayer(previewMarker);
+  }
+
+  previewMarker = L.marker([x.lat,x.lon], {
+      opacity:0.8
+  }).addTo(map);
+
+  map.flyTo([x.lat,x.lon], Math.max(map.getZoom(),17), {
+      duration:0.4  
+  });
+    map.flyTo([x.lat,x.lon], Math.max(map.getZoom(),17), {
+      duration:0.4
+    });
+
+  // Add confirmation button if needed
+  let btn=document.getElementById('useAltBtn');
+  if(!btn){
+    btn=document.createElement('button');
+    btn.id='useAltBtn';
+    btn.className='convertBtn';
+    btn.textContent='Use this address';
+    btn.onclick=commitAltChoice;
+    $('altList').appendChild(btn);
+  }
+}
+function commitAltChoice(){
+  if(!previewAlt) return;
+
+  $('wordsIn').value = previewAlt.words;
+  active='words';
+
+  previewAlt=null;
+
+  clearAlts();
+  $('altBtn').style.display='none';
+
+  convert();
+}
+async function fromGPS(){
+  const lat=parseFloat($('lat').value), lon=parseFloat($('lon').value);
+  if(isNaN(lat)||isNaN(lon)){ setStatus('gpStatus','enter latitude and longitude',false); return; }
+  if(lat<-90||lat>90||lon<-180||lon>180){ setStatus('gpStatus','lat −90…90, lon −180…180',false); return; }
+  const altKm=altKmFromBox();
+  const r=await fillAll(lat,lon,altKm,{statusId:'gpStatus'});
+  if(r) setStatus('gpStatus', altKm==null?'converted · ground level':'converted · 3D altitude', true);
+}
+
+// ONE convert button routes to whichever group was last edited
+async function convert(){ if(isBusy) return; setBusy(true); clearStatuses(); hideAC(); clearAlts(); clearFeedback();
+  try{ if(active==='words') await fromWords(); else if(active==='gps') await fromGPS(); else await fromStreet(); }
+  finally { setBusy(false); }
+}
+
+// --- street autocomplete (debounced Nominatim suggestions) ---
+let acTimer=null, acItems=[], acSel=-1;
+const acBox=$('streetAC');
+function hideAC(){ acBox.style.display='none'; acItems=[]; acSel=-1; }
+function showAC(list){
+  acItems=list; acSel=-1;
+  acBox.innerHTML=list.map((r,i)=>`<div data-i="${i}">${r.display_name}</div>`).join('');
+  acBox.style.display=list.length?'block':'none';
+  [...acBox.children].forEach(el=>el.onclick=()=>pickAC(+el.dataset.i));
+}
+function pickAC(i){
+  const r=acItems[i]; if(!r) return;
+  $('street').value=r.display_name; hideAC();
+  clearStatuses();
+  fillAll(parseFloat(r.lat),parseFloat(r.lon),null,{streetAlready:true,statusId:'stStatus'})
+    .then(x=>{ if(x) setStatus('stStatus','converted · ground level',true); });
+}
+$('street').addEventListener('input',()=>{
+  active='street';
+  clearTimeout(acTimer);
+  const q=$('street').value.trim();
+  if(q.length<3){ hideAC(); return; }
+  acTimer=setTimeout(async()=>{
+    try{
+      const res=await getJSON(api(`/v1/geocode_suggest?q=${encodeURIComponent(q)}`));
+      showAC(res.ok?res.results:[]);
+    }catch(e){ hideAC(); }
+  }, 350);
+});
+$('street').addEventListener('keydown',e=>{
+  if(acBox.style.display==='none') { if(e.key==='Enter') convert(); return; }
+  if(e.key==='ArrowDown'){ acSel=Math.min(acSel+1,acItems.length-1); }
+  else if(e.key==='ArrowUp'){ acSel=Math.max(acSel-1,0); }
+  else if(e.key==='Enter'){ e.preventDefault(); if(acSel>=0) pickAC(acSel); else hideAC(); return; }
+  else if(e.key==='Escape'){ hideAC(); return; }
+  else return;
+  [...acBox.children].forEach((el,i)=>el.classList.toggle('sel',i===acSel));
+});
+document.addEventListener('click',e=>{ if(!acBox.contains(e.target)&&e.target!==$('street')) hideAC(); });
+
+// enter-to-convert on the other inputs
+['lat','lon','alt'].forEach(i=>$(i).addEventListener('keydown',e=>{
+  if(e.key==='Enter') convert();
+}));
+
+// map click / locate -> GPS (ground)
+function useCoords(lat,lon){ $('lat').value=lat.toFixed(6); $('lon').value=lon.toFixed(6);
+  $('alt').value=''; active='gps'; convert(); }
+map.on('click', e => useCoords(e.latlng.lat, e.latlng.lng));
+
+const LocateControl=L.Control.extend({
+  options:{position:'topleft'},
+  onAdd:function(){
+    const b=L.DomUtil.create('a','leaflet-bar');
+    b.href='#'; b.title='Go to my location';
+    b.style.cssText='width:30px;height:30px;background:#fff;display:flex;align-items:center;justify-content:center';
+    b.innerHTML='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#137a58" stroke-width="2"><circle cx="12" cy="12" r="6"/><line x1="12" y1="1" x2="12" y2="4"/><line x1="12" y1="20" x2="12" y2="23"/><line x1="1" y1="12" x2="4" y2="12"/><line x1="20" y1="12" x2="23" y2="12"/></svg>';
+    L.DomEvent.on(b,'click',L.DomEvent.stop).on(b,'click',()=>{
+      if(!navigator.geolocation){ setStatus('gpStatus','geolocation not supported',false); return; }
+      navigator.geolocation.getCurrentPosition(
+        p=>useCoords(p.coords.latitude,p.coords.longitude),
+        e=>setStatus('gpStatus','location failed: '+e.message,false),
+        {enableHighAccuracy:true,timeout:10000});
+    });
+    return b;
+  }
+});
+map.addControl(new LocateControl());
+
+// --- server settings (Official / Local / Custom), persisted in localStorage ---
+let _settingsMode='official';
+function currentSetting(){ try{ return JSON.parse(localStorage.getItem(API_STORE_KEY)||'null'); }catch(e){ return null; } }
+function openSettings(){
+  const s=currentSetting();
+  _settingsMode = (s&&s.mode) ? s.mode : 'official';
+  $('optOfficialUrl').textContent = String(window.API_BASE||'').replace(/\/+$/,'') || 'same origin as this page';
+  $('customUrl').value = (s&&s.mode==='custom'&&s.url) ? s.url : '';
+  renderServerOpts();
+  $('settingsHint').textContent = 'Active: '+(resolveApiBase()||'(same origin)');
+  $('settingsModal').style.display='flex';
+}
+function closeSettings(){ $('settingsModal').style.display='none'; }
+function pickServer(mode){ _settingsMode=mode; renderServerOpts(); if(mode==='custom') $('customUrl').focus(); }
+function renderServerOpts(){ document.querySelectorAll('#settingsOpts .settings-opt').forEach(el=>el.classList.toggle('sel', el.dataset.mode===_settingsMode)); }
+function saveSettings(){
+  let payload;
+  if(_settingsMode==='custom'){
+    const url=$('customUrl').value.trim().replace(/\/+$/,'');
+    if(!url){ $('settingsHint').textContent='enter a custom URL, or choose another option'; return; }
+    payload={mode:'custom', url};
+  } else if(_settingsMode==='local'){ payload={mode:'local'}; }
+  else { payload={mode:'official'}; }
+  try{ localStorage.setItem(API_STORE_KEY, JSON.stringify(payload)); }catch(e){}
+  closeSettings();
+  setStatus('woStatus','API server set to '+(resolveApiBase()||'same origin'), true);
+}
+
+(function(){ const l=(navigator.language||'en').toLowerCase(); $('unit').value=(l==='en-us'||l==='en')?'ft':'m'; loadHistory(); const params=new URLSearchParams(window.location.search); const address=params.get('address')||window.location.hash.replace(/^#/, ''); if(address){ $('wordsIn').value=address; active='words'; convert(); } })();
+</script>
+</body>
+</html>
