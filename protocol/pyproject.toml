@@ -14,7 +14,7 @@ keywords = ["geocoding", "addressing", "protocol", "3d", "words"]
 dependencies = ["numpy"]
 
 [project.urls]
-Homepage = "https://github.com/Raylu42x/wordaddress"
+Homepage = "https://github.com/Raylu42x/3d-address"
 
 # The engine lives in the `protocol` import package; the distribution is "waddr".
 [tool.setuptools]

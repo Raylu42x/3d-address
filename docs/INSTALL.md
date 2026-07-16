@@ -20,7 +20,7 @@ browser ──▶ Caddy (host, :443)
 ## 1. Configure
 
 ```bash
-git clone https://github.com/Raylu42x/wordaddress && cd wordaddress
+git clone https://github.com/Raylu42x/3d-address && cd 3d-address
 cp docker/.env.example docker/.env
 ```
 

@@ -33,7 +33,7 @@ docs/        the spec, API reference, install guide, and dictionary brief.
 ## Quick start (Docker)
 
 ```bash
-git clone https://github.com/Raylu42x/wordaddress && cd wordaddress
+git clone https://github.com/Raylu42x/3d-address && cd 3d-address
 cp docker/.env.example docker/.env      # edit domains / API_BASE / CORS
 cd docker && docker compose up -d --build
 ```
