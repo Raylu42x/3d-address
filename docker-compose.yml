@@ -1,0 +1,7 @@
+services:
+  wordaddress:
+    build: .
+    container_name: wordaddress
+    restart: unless-stopped
+    ports:
+      - "8000:8000"

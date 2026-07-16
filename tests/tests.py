@@ -1,3 +1,4 @@
+import sys, os; sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 """
 tests.py — round-trip and property tests for the Phase 1 core.
 

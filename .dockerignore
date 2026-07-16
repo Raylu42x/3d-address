@@ -1,0 +1,11 @@
+.venv/
+__pycache__/
+*.pyc
+.git/
+tests/
+docs/
+build_wordlist.py
+validate_wordlist.py
+.gitignore
+docker-compose.yml
+Dockerfile
