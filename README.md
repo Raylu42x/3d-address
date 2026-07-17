@@ -1,6 +1,7 @@
 # 3D Word-Based Address Protocol
 
-[![PyPI](https://img.shields.io/pypi/v/waddr.svg)](https://pypi.org/project/waddr/) · **Try it live:** [address.kervian.com](https://address.kervian.com) · `pip install waddr`
+[![PyPI](https://img.shields.io/pypi/v/waddr.svg)](https://pypi.org/project/waddr/)
+**Try it live:** [address.kervian.com](https://address.kervian.com) · `pip install waddr`
 
 An open addressing protocol that maps any point in the near-Earth shell
 (≈13 km underground to 2,000 km altitude) to a short, human-readable address:
