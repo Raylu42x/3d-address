@@ -4,13 +4,16 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>3D Word Address — turn any GPS point into 5 words</title>
-<meta name="description" content="Convert any location on Earth — from 13 km underground to 2,000 km up — into a short, memorable word address, and back. Free, open, and precise to the doorway.">
+<meta name="description" content="Turn any location into five memorable words — and back. A free, open 3D address for every point on Earth, precise from the doorway to orbit.">
 <meta name="keywords" content="word address, 3D address, geocoding, GPS to words, coordinates, location sharing, what3words alternative, waddr">
 <meta name="author" content="Bennett">
 <meta name="theme-color" content="#1d9e75">
 <link rel="canonical" href="__SITE_URL__/">
+<link rel="icon" href="/favicon.ico" sizes="any">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-<link rel="apple-touch-icon" href="/favicon.svg">
+<link rel="icon" href="/favicon-48.png" sizes="48x48" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="manifest" href="/site.webmanifest">
 <!-- Open Graph (Facebook, iMessage, Slack, LinkedIn) -->
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="3D Word Address">
@@ -25,6 +28,33 @@
 <meta name="twitter:title" content="3D Word Address — turn any GPS point into 5 words">
 <meta name="twitter:description" content="Convert any location on Earth — from underground to orbit — into a short, memorable word address, and back.">
 <meta name="twitter:image" content="__SITE_URL__/og.png">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebSite",
+      "@id": "__SITE_URL__/#website",
+      "url": "__SITE_URL__/",
+      "name": "3D Word Address",
+      "description": "Turn any location into five memorable words — and back."
+    },
+    {
+      "@type": "WebApplication",
+      "name": "3D Word Address",
+      "url": "__SITE_URL__/",
+      "applicationCategory": "UtilitiesApplication",
+      "operatingSystem": "Any",
+      "browserRequirements": "Requires JavaScript",
+      "isAccessibleForFree": true,
+      "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+      "description": "A free, open 3D word-based address protocol that maps any point on Earth — from underground to orbit — to a short, memorable word address and back.",
+      "image": "__SITE_URL__/og.png",
+      "author": { "@type": "Person", "name": "Bennett" }
+    }
+  ]
+}
+</script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <style>
   :root{
