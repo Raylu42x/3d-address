@@ -19,8 +19,8 @@ from pydantic import BaseModel, Field
 from slowapi.errors import RateLimitExceeded
 from slowapi import _rate_limit_exceeded_handler
 
-from protocol import encode_all, decode as protocol_decode, alternatives as protocol_alternatives
-from protocol import dictionary as D
+from waddr import encode_all, decode as protocol_decode, alternatives as protocol_alternatives
+from waddr import dictionary as D
 
 import config
 import geocoding

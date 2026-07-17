@@ -5,8 +5,8 @@ tests_dictionary.py — Phase 3 plumbing tests (run against the placeholder list
     python tests_dictionary.py
 """
 import random
-from protocol.encoder import encode, decode
-import protocol.dictionary as D
+from waddr.encoder import encode, decode
+import waddr.dictionary as D
 
 rng = random.Random(11)
 _pass = _fail = 0
@@ -63,8 +63,9 @@ addr = D.make_address(idx)
 back = D.read_address(addr)
 (dlat, dlon, dalt), edge = decode(back["indices"])
 import math
-x1, y1, z1 = __import__("geometry").geo_to_xyz(lat, lon, alt)
-x2, y2, z2 = __import__("geometry").geo_to_xyz(dlat, dlon, dalt)
+from waddr.geometry import geo_to_xyz
+x1, y1, z1 = geo_to_xyz(lat, lon, alt)
+x2, y2, z2 = geo_to_xyz(dlat, dlon, dalt)
 err = math.sqrt((x1-x2)**2 + (y1-y2)**2 + (z1-z2)**2) * 1000
 check("Tokyo geo->address->geo within cell", err <= edge*1000*math.sqrt(3)/2 + 1e-6,
       f"address={addr}  err={err:.2f}m")

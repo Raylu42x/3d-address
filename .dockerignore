@@ -1,14 +1,16 @@
-# Build context is the repo root for both images. Keep tests and dev cruft out
-# of the images (constraint: tests are kept in the repo but excluded from Docker).
+# Build context is the repo root for both images. Keep tests, tooling, docs, and
+# dev/build cruft out of the images (tests are kept in the repo, not shipped).
 .git/
 .venv/
 **/__pycache__/
 **/*.pyc
 **/tests/
-**/.DS_Store
+tools/
+**/tools/
 docs/
-*.egg-info/
-build/
-dist/
+**/.DS_Store
+**/*.egg-info/
+**/build/
+**/dist/
 .env
 docker/.env

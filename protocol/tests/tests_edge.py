@@ -10,10 +10,10 @@ seam, cell boundaries, out-of-range inputs), not just to confirm no crashes.
 """
 
 import math
-from protocol.geometry import (
+from waddr.geometry import (
     INNER, OUTER, R_MEAN, CELL1, N1, HALF, geo_to_xyz, xyz_to_geo,
 )
-from protocol.encoder import encode, decode, bounds_xyz
+from waddr.encoder import encode, decode, bounds_xyz
 
 _pass = 0
 _fail = 0

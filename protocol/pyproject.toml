@@ -16,14 +16,15 @@ dependencies = ["numpy"]
 [project.urls]
 Homepage = "https://github.com/Raylu42x/3d-address"
 
-# The engine lives in the `protocol` import package; the distribution is "waddr".
+# The engine lives on disk in ./ (the protocol/ directory) but installs as the
+# `waddr` import package; the distribution name is also "waddr".
 [tool.setuptools]
-packages = ["protocol"]
-package-dir = { "protocol" = "." }
+packages = ["waddr"]
+package-dir = { "waddr" = "." }
 
 # words.txt is required at runtime and must ship inside the wheel.
 [tool.setuptools.package-data]
-protocol = ["words.txt"]
+waddr = ["words.txt"]
 
 [tool.setuptools.exclude-package-data]
-protocol = ["tests/*"]
+waddr = ["tests/*"]

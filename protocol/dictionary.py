@@ -197,8 +197,8 @@ def read_address(text):
 
 
 if __name__ == "__main__":
-    # demo; run with `python -m protocol.dictionary`
-    from protocol.encoder import encode
+    # demo; run with `python -m waddr.dictionary`
+    from .encoder import encode
     print(f"dictionary source: {SOURCE}  ({len(WORD_LIST):,} words)")
     idx = encode(51.5074, -0.1278, 0.1, 5)
     addr = make_address(idx)

@@ -7,8 +7,8 @@ tests.py — round-trip and property tests for the Phase 1 core.
 
 import math
 import random
-from protocol.geometry import geo_to_xyz, INNER, OUTER, R_MEAN
-from protocol.encoder import encode, decode, bounds_xyz, valid_cell_count
+from waddr.geometry import geo_to_xyz, INNER, OUTER, R_MEAN
+from waddr.encoder import encode, decode, bounds_xyz, valid_cell_count
 
 
 def _err_m(lat, lon, alt, dlat, dlon, dalt):

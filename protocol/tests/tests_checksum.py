@@ -5,7 +5,7 @@ tests_checksum.py — correctness + empirical error-detection rates for Phase 2.
     python tests_checksum.py
 """
 import random
-from protocol.checksum import checksum, validate, format_transfer, parse_transfer, format_human
+from waddr.checksum import checksum, validate, format_transfer, parse_transfer, format_human
 
 rng = random.Random(7)
 def rand_addr(n=5):
