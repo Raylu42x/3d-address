@@ -18,7 +18,7 @@ echo "config.js: window.API_BASE = \"${API_BASE}\""
 #    social crawlers read from the raw HTML and require absolute URLs).
 : "${SITE_URL:=}"
 SITE_URL="${SITE_URL%/}"   # strip any trailing slash
-for f in index.html robots.txt sitemap.xml; do
+for f in index.html about.html robots.txt sitemap.xml; do
   [ -f "$ROOT/$f" ] && sed -i "s|__SITE_URL__|${SITE_URL}|g" "$ROOT/$f"
 done
 echo "SEO: SITE_URL = \"${SITE_URL}\""

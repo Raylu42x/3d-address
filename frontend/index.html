@@ -140,6 +140,9 @@
   .ac div:hover,.ac div.sel{background:var(--chip)}
   .historyItem{display:block;width:100%;text-align:left;padding:8px 0;border:0;border-top:1px solid var(--line);background:none;color:inherit;font:inherit;font-size:12px;cursor:pointer}
   .historyItem:hover .hw{color:var(--accent2)}
+  .siteFooter{font-size:12px;line-height:1.6;color:var(--muted);padding:4px 2px 2px}
+  .siteFooter a{color:var(--accent2);text-decoration:none;white-space:nowrap}
+  .siteFooter a:hover{text-decoration:underline}
   .historyItem:first-child{border-top:0;padding-top:0}
   .historyItem .hw{font-family:ui-monospace,Menlo,monospace;word-break:break-all}
   .historyItem .hm{color:var(--muted);margin-top:2px}
@@ -235,6 +238,13 @@
       <h2>Recent addresses</h2>
       <div id="historyList"></div>
     </div>
+
+    <footer class="siteFooter">
+      A free, open, fully 3D word-based address for any point on Earth — from
+      underground to orbit. <a href="/about.html">How it works</a> ·
+      <a href="https://github.com/Raylu42x/3d-address">GitHub</a> ·
+      <a href="https://pypi.org/project/waddr/">pip install waddr</a>
+    </footer>
 
   </div>
 </div>

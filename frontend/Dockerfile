@@ -3,7 +3,7 @@
 FROM nginx:1.27-alpine
 
 # static files (UI, config, SEO assets, social preview image, favicons, manifest)
-COPY frontend/index.html frontend/config.js frontend/robots.txt \
+COPY frontend/index.html frontend/about.html frontend/config.js frontend/robots.txt \
      frontend/sitemap.xml frontend/site.webmanifest frontend/og.png \
      frontend/favicon.svg frontend/favicon.ico frontend/favicon-48.png \
      frontend/apple-touch-icon.png frontend/icon-192.png frontend/icon-512.png \
