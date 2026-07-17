@@ -1,5 +1,7 @@
 # 3D Word-Based Address Protocol
 
+[![PyPI](https://img.shields.io/pypi/v/waddr.svg)](https://pypi.org/project/waddr/) · **Try it live:** [address.kervian.com](https://address.kervian.com) · `pip install waddr`
+
 An open addressing protocol that maps any point in the near-Earth shell
 (≈13 km underground to 2,000 km altitude) to a short, human-readable address:
 
@@ -56,10 +58,15 @@ and can be pointed elsewhere via the in-app Settings gear.
 
 ## Use the engine directly
 
-The protocol package has no web dependencies — use it as a library:
+The engine is published on PyPI as [**`waddr`**](https://pypi.org/project/waddr/) —
+no web dependencies, just numpy:
+
+```bash
+pip install waddr
+```
 
 ```python
-from protocol import encode_all, decode
+from waddr import encode_all, decode
 
 info = encode_all(51.5074, -0.1278, alt_km=0.1, words=5)
 print(info["words"])                 # dinosaur-epidural-usable-bingo-dusty-C
@@ -108,6 +115,24 @@ Full request/response examples: [`docs/API.md`](docs/API.md).
 Geocoding uses free public OSM services (rate-limited by default) — fine for
 personal use; point `NOMINATIM_URL`/`PHOTON_URL` at your own instance, or set
 `GEOCODER_ENABLED=false`, for heavy traffic.
+
+## Self-hosting
+
+Anyone can run their own instance — and because the dictionary and geometry are
+frozen, a self-hosted copy produces the **exact same addresses** as every other
+instance. It's another node of one protocol, not a fork. Three levels:
+
+1. **Just the library** — `pip install waddr`, `from waddr import encode_all, decode`.
+   No server needed. This is most developers.
+2. **The API only** — run `backend/` (`pip install ./protocol -r backend/requirements.txt`
+   then `uvicorn app:app`), or the backend container. Gives you the `/v1` endpoints.
+3. **The full web app** — backend + frontend + HTTPS via Docker. Point four env
+   values at your own domains (`FRONTEND_DOMAIN`, `API_DOMAIN`, `API_BASE`,
+   `CORS_ORIGINS`) and `docker compose up -d --build`.
+
+Full walkthrough — including the Caddy reverse-proxy config for automatic
+HTTPS — is in [`docs/INSTALL.md`](docs/INSTALL.md). Publishing the package
+yourself: [`docs/PUBLISHING.md`](docs/PUBLISHING.md).
 
 ## Tests
 
