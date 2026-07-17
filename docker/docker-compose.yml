@@ -37,6 +37,8 @@ services:
     environment:
       # Public API origin the browser calls. In production this is https://API_DOMAIN.
       - API_BASE=${API_BASE:-}
+      # Public site origin for SEO absolute URLs (canonical, Open Graph, sitemap).
+      - SITE_URL=${SITE_URL:-}
     ports:
       - "127.0.0.1:8080:80"
     depends_on:
