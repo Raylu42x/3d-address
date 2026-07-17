@@ -26,17 +26,22 @@ version.
 ## Repository layout
 
 ```
-protocol/    the pure engine — the actual product. No web deps (numpy only).
-             pip-installable ("waddr"); ships the official words.txt dictionary.
-backend/     FastAPI service that imports the protocol package. Geocoding,
-             CORS, and rate limiting. Serves the API only (versioned under /v1).
-frontend/    the static web UI (index.html) + nginx image. Talks to the backend
-             via a configurable API base URL.
-docker/      docker-compose + host Caddy reverse-proxy example + .env.example.
-docs/        the spec, API reference, install guide, and dictionary brief.
+protocol/    the core engine — the actual product. No web deps (numpy only).
+             pip-installable as "waddr" and ships the frozen dictionary.
+backend/     FastAPI service that wraps the protocol with HTTP endpoints,
+             validation, geocoding, rate limiting, and CORS.
+frontend/    the polished web UI for conversion, sharing, copying, QR access,
+             history, and map-based viewing.
+docker/      docker-compose + host Caddy reverse-proxy example + .env example.
+docs/        protocol spec, API docs, install notes, feature overview, and
+             publishing guidance.
 ```
 
+For a concise overview of the current product experience, see [docs/FEATURES.md](docs/FEATURES.md).
+
 ## Quick start (Docker)
+
+For the full deployment flow, including the reverse proxy and environment setup, see [docs/INSTALL.md](docs/INSTALL.md).
 
 ```bash
 git clone https://github.com/Raylu42x/3d-address && cd 3d-address
@@ -101,6 +106,8 @@ subdivision per added word — hence the 27,000-word dictionary. Full detail:
 
 ## API
 
+The HTTP interface is documented in [docs/API.md](docs/API.md).
+
 Functional endpoints are versioned under `/v1`; `/health` is unversioned;
 interactive docs live at `/docs`.
 
@@ -122,6 +129,8 @@ personal use; point `NOMINATIM_URL`/`PHOTON_URL` at your own instance, or set
 
 ## Self-hosting
 
+A complete setup guide for running the full stack locally or in production is in [docs/INSTALL.md](docs/INSTALL.md).
+
 Anyone can run their own instance — and because the dictionary and geometry are
 frozen, a self-hosted copy produces the **exact same addresses** as every other
 instance. It's another node of one protocol, not a fork. Three levels:
@@ -139,6 +148,8 @@ HTTPS — is in [`docs/INSTALL.md`](docs/INSTALL.md). Publishing the package
 yourself: [`docs/PUBLISHING.md`](docs/PUBLISHING.md).
 
 ## Tests
+
+The engine and backend test suites are listed below. For a broader product overview, see [docs/FEATURES.md](docs/FEATURES.md).
 
 Tests live next to what they cover and are excluded from the Docker images.
 
