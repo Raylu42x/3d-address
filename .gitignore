@@ -11,3 +11,4 @@ dist/
 # local deployment config (copy docker/.env.example -> docker/.env)
 .env
 docker/.env
+.claude/
