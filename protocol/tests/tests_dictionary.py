@@ -71,3 +71,8 @@ check("Tokyo geo->address->geo within cell", err <= edge*1000*math.sqrt(3)/2 + 1
       f"address={addr}  err={err:.2f}m")
 
 print(f"\nSUMMARY: {_pass} passed, {_fail} failed")
+
+# Exit non-zero when a check fails. Without this the script printed its
+# SUMMARY and still exited 0, so failures were invisible to CI and to
+# anyone not reading the output by eye.
+sys.exit(1 if _fail else 0)
