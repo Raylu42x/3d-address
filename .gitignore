@@ -12,3 +12,6 @@ dist/
 .env
 docker/.env
 .claude/
+
+# Internal launch/commercial assessment — not for the public repo
+LAUNCH.md

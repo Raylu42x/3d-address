@@ -188,3 +188,41 @@ Split license — see [`LICENSE`](LICENSE) and
 Core, checksum, dictionary, API, and UI complete and tested. Future: `orbit.`/
 `deep.` prefixes, premium alias words (surplus indices above 27,000), a
 "did-you-mean" disambiguator for confusable addresses.
+
+## Running the tests
+
+```bash
+pip install -e ./protocol
+./run-tests.sh
+```
+
+Installing the protocol package first is required — `protocol/tests/test_vectors.py`
+imports `waddr`, and without it pytest aborts during collection with
+`ModuleNotFoundError` before running anything.
+
+Two test styles live in this repo and the runner covers both:
+
+| Files | Style |
+|---|---|
+| `protocol/tests/test_*.py`, `backend/tests/test_*.py` | pytest (54 tests) |
+| `protocol/tests/tests_*.py` | standalone scripts with their own PASS/FAIL tally |
+
+### Known failing checks
+
+Two checks fail. They were failing before this was documented — the
+script-style suites printed a `SUMMARY` line and then exited `0` regardless, so
+nothing surfaced them. They now exit non-zero.
+
+1. **`tests_dictionary.py` — "valid-but-wrong word corrected via checksum"**
+   (`no near word found`). Checksum-guided correction finds no near word for a
+   valid-but-incorrect input.
+
+2. **`tests_edge.py` — "indices identical across the seam"**
+   `[12501, 13635, 30, 150, 420]` vs `[12501, 13634, 59, 179, 449]`. A point
+   lying exactly on a cell seam encodes differently depending on which side it
+   is approached from.
+
+Neither is fixed here. Both are questions about the encoding scheme rather than
+the surrounding code — a point exactly on a boundary arguably belongs to both
+adjacent cells, so the seam check may assert more than the spec promises.
+Deciding that is a protocol decision.

@@ -75,3 +75,8 @@ check("corrupted transfer string rejected", not ok)
 
 print(f"\nSUMMARY: {_pass} passed, {_fail} failed")
 print(f"detection — single:{rate_single:.2f}%  swap:{rate_swap:.2f}%  adjacent:{rate_adj:.2f}%")
+
+# Exit non-zero when a check fails. Without this the script printed its
+# SUMMARY and still exited 0, so failures were invisible to CI and to
+# anyone not reading the output by eye.
+sys.exit(1 if _fail else 0)
